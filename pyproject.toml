@@ -1,0 +1,15 @@
+# pyproject.toml
+[project]
+name = "comfyui-gpeno" # Unique identifier for your node. Immutable after creation.
+description = "A node for ComfyUI that performs GPEN face restoration on the input image(s). Significantly faster than other implementations of GPEN."
+version = "0.0.1" # Custom Node version. Must be semantically versioned.
+license = { file = "LICENSE.txt" }
+dependencies  = [] # Filled in from requirements.txt
+
+[project.urls]
+Repository = "https://github.com/SparknightLLC/ComfyUI-GPENO"
+
+[tool.comfy]
+PublisherId = "sparknight" # TODO (fill in Publisher ID from Comfy Registry Website).
+DisplayName = "ComfyUI-GPENO" # Display name for the Custom Node. Can be changed later.
+Icon = "https://example.com/icon.png" # SVG, PNG, JPG or GIF (MAX. 800x400px)
