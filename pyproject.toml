@@ -2,7 +2,7 @@
 [project]
 name = "comfyui-gpeno" # Unique identifier for your node. Immutable after creation.
 description = "A node for ComfyUI that performs GPEN face restoration on the input image(s). Significantly faster than other implementations of GPEN."
-version = "0.0.1" # Custom Node version. Must be semantically versioned.
+version = "0.1.0" # Custom Node version. Must be semantically versioned.
 license = { file = "LICENSE.txt" }
 dependencies  = [] # Filled in from requirements.txt
 

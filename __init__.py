@@ -64,10 +64,17 @@ class GPENO:
 		        "aligned": ("BOOLEAN", {
 		            "default": False
 		        }),
+		        "colorize": ("BOOLEAN", {
+		            "default": False,
+		        }),
 		    },
 		}
 
-	RETURN_TYPES = ("IMAGE", )
+	RETURN_TYPES = (
+	    "IMAGE",
+	    "IMAGE",
+	    "IMAGE",
+	)
 	FUNCTION = "op"
 	CATEGORY = "image"
 	DESCRIPTION = """
@@ -78,7 +85,7 @@ Performs GPEN face restoration on the input image(s). This implementation has be
 		self.gpen_processor = None
 		self.gpen_cache_model = ""
 
-	def op(self, image, use_global_cache, unload, backbone, resolution_preset, downscale_method, channel_multiplier, narrow, alpha, device, aligned):
+	def op(self, image, use_global_cache, unload, backbone, resolution_preset, downscale_method, channel_multiplier, narrow, alpha, device, aligned, colorize):
 		global global_gpen_processor
 		global global_gpen_cache_model
 
@@ -152,6 +159,9 @@ Performs GPEN face restoration on the input image(s). This implementation has be
 		elif args.model == "GPEN-BFR-2048":
 			download_file(f"{gpen_dir}/{args.model}.pth", "https://public-vigen-video.oss-cn-shanghai.aliyuncs.com/robin/models/GPEN-BFR-2048.pth")
 
+		if colorize:
+			download_file(f"{gpen_dir}/GPEN-Colorization-1024.pth", "https://public-vigen-video.oss-cn-shanghai.aliyuncs.com/robin/models/GPEN-Colorization-1024.pth")
+
 		# Additional dependencies
 		download_file(f"{facedetect_dir}/parsing_parsenet.pth", "https://public-vigen-video.oss-cn-shanghai.aliyuncs.com/robin/models/ParseNet-latest.pth")
 		# for sr
@@ -173,7 +183,7 @@ Performs GPEN face restoration on the input image(s). This implementation has be
 
 		if unload or not this_gpen_processor or this_gpen_cache_model != resolution_preset:
 			print("Loading FaceEnhancement object...")
-			face_enhancement_obj = FaceEnhancement(args, base_dir=f"{models_dir}/", in_size=args.in_size, model=args.model, use_sr=args.use_sr, device=args.use_cuda, interp=downscale_method, backbone=backbone)
+			face_enhancement_obj = FaceEnhancement(args, base_dir=f"{models_dir}/", in_size=args.in_size, model=args.model, use_sr=args.use_sr, device=args.use_cuda, interp=downscale_method, backbone=backbone, colorize=colorize)
 
 			if use_global_cache:
 				global_gpen_processor = face_enhancement_obj
@@ -193,6 +203,8 @@ Performs GPEN face restoration on the input image(s). This implementation has be
 
 		total_images = image.shape[0]
 		out_images = []
+		out_original_faces = []
+		out_enhanced_faces = []
 
 		for i in range(total_images):
 			# image is a 4d tensor array in the format of [B, H, W, C]
@@ -202,13 +214,20 @@ Performs GPEN face restoration on the input image(s). This implementation has be
 			result, orig_faces, enhanced_faces = this_gpen_processor.process(img, aligned=args.aligned)
 
 			out_images.append(result)
-
-			# result = np.expand_dims(result, axis=0)
-			# result = torch.from_numpy(result).float() / 255.
-			# result = result.cpu()
+			# add each of the orig_faces list to the out_original_faces list
+			for orig_face in orig_faces:
+				out_original_faces.append(orig_face)
+			for enhanced_face in enhanced_faces:
+				out_enhanced_faces.append(enhanced_face)
 
 		restored_img_np = np.array(out_images).astype(np.float32) / 255.0
 		restored_img_tensor = torch.from_numpy(restored_img_np)
+
+		restored_original_faces_np = np.array(out_original_faces).astype(np.float32) / 255.0
+		restored_original_faces_tensor = torch.from_numpy(restored_original_faces_np)
+
+		restored_enhanced_faces_np = np.array(out_enhanced_faces).astype(np.float32) / 255.0
+		restored_enhanced_faces_tensor = torch.from_numpy(restored_enhanced_faces_np)
 
 		if unload:
 			print("Unloading GPEN from cache.")
@@ -221,7 +240,11 @@ Performs GPEN face restoration on the input image(s). This implementation has be
 				self.gpen_processor = None
 
 		print("GPENO processing done.")
-		return (restored_img_tensor, )
+		return (
+		    restored_img_tensor,
+		    restored_original_faces_tensor,
+		    restored_enhanced_faces_tensor,
+		)
 
 
 # A dictionary that contains all nodes you want to export with their names

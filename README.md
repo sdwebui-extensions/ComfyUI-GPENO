@@ -13,7 +13,7 @@ Simply drag the image above into ComfyUI and use [ComfyUI Manager » Install Mis
 
 ### Performance Evaluation
 
-Face restoration is commonly applied as a post-processing step in faceswap workflows. I ran a few tests against the popular [ReActor node](https://github.com/Gourieff/comfyui-reactor-node), which includes both face restoration and GPEN features:
+Face restoration is commonly applied as a post-processing step in faceswap workflows. I ran a few tests against the popular [ReActor node](https://github.com/Gourieff/ComfyUI-ReActor), which includes both face restoration and GPEN features:
 
 - ReActor end-to-end time using the `GPEN-BFR-512` model for face restoration is about **1.4 seconds** on my GeForce 3090.
 - ReActor followed by this GPENO node with the same model takes about **0.7 seconds** - almost exactly 2x speedup for no loss of quality.

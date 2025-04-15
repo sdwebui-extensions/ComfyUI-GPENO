@@ -11,7 +11,7 @@ from gpeno.align_faces import warp_and_crop_face, get_reference_facial_points
 
 class FaceEnhancement(object):
 
-	def __init__(self, args, base_dir='./', in_size=512, out_size=None, model=None, use_sr=True, device='cuda', interp=3, backbone="RetinaFace-R50", log=None):
+	def __init__(self, args, base_dir='./', in_size=512, out_size=None, model=None, use_sr=True, device='cuda', interp=3, backbone="RetinaFace-R50", log=None, colorize=False):
 		self.log = log
 		# self.log.debug("Initializing FaceEnhancement...")
 		self.facedetector = RetinaFaceDetection(base_dir, device, network=backbone)
@@ -25,6 +25,10 @@ class FaceEnhancement(object):
 		self.threshold = 0.9
 		self.alpha = args.alpha
 		self.interp = interp
+		self.colorize = colorize
+
+		if self.colorize:
+			self.colorizer = FaceGAN(base_dir, 1024, 1024, "GPEN-Colorization-1024", args.channel_multiplier, args.narrow, None, device)
 
 		self.mask = np.zeros((512, 512), np.float32)
 		cv2.rectangle(self.mask, (26, 26), (486, 486), (1, 1, 1), -1, cv2.LINE_AA)
@@ -41,11 +45,29 @@ class FaceEnhancement(object):
 		mask = cv2.GaussianBlur(mask, (101, 101), 4)
 		return mask.astype(np.float32)
 
+	def colorize_face(self, face):
+		# Convert BGR (OpenCV) to RGB before colorizing
+		rgb_input = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
+		color_face = self.colorizer.process(rgb_input)
+		color_face = cv2.cvtColor(color_face, cv2.COLOR_RGB2BGR)
+
+		if face.shape[:2] != color_face.shape[:2]:
+			out_rs = cv2.resize(color_face, face.shape[:2][::-1])
+			gray_yuv = cv2.cvtColor(face, cv2.COLOR_BGR2YUV)
+			out_yuv = cv2.cvtColor(out_rs, cv2.COLOR_BGR2YUV)
+
+			out_yuv[:, :, 0] = gray_yuv[:, :, 0]
+			color_face = cv2.cvtColor(out_yuv, cv2.COLOR_YUV2BGR)
+
+		return color_face
+
 	def process(self, img, aligned=False):
 		orig_faces, enhanced_faces = [], []
 		if aligned:
 			print("Aligned is true")
 			ef = self.facegan.process(img)
+			if self.colorize:
+				ef = self.colorize_face(ef)
 			orig_faces.append(img)
 			enhanced_faces.append(ef)
 
@@ -82,11 +104,13 @@ class FaceEnhancement(object):
 			print("Starting face alignment...")
 			of, tfm_inv = warp_and_crop_face(img, facial5points, reference_pts=self.reference_5pts, crop_size=(self.in_size, self.in_size))
 
-			# self.log.debug("Face alignment complete")
 			print("Face alignment complete")
 
 			# enhance the face
 			ef = self.facegan.process(of)
+
+			if self.colorize:
+				ef = self.colorize_face(ef)
 
 			# self.log.debug("Face GAN complete")
 			print("Face GAN complete")
