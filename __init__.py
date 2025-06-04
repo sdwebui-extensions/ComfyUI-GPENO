@@ -15,7 +15,6 @@ this_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(this_path)
 
 import gpeno.__init_paths
-from gpeno.face_enhancement import FaceEnhancement
 
 models_dir = folder_paths.models_dir
 
@@ -88,6 +87,7 @@ Performs GPEN face restoration on the input image(s). This implementation has be
 	def op(self, image, use_global_cache, unload, backbone, resolution_preset, downscale_method, channel_multiplier, narrow, alpha, device, aligned, colorize):
 		global global_gpen_processor
 		global global_gpen_cache_model
+		from gpeno.face_enhancement import FaceEnhancement
 
 		# Package arguments into attribute notation for use with argparse
 		args = argparse.Namespace()
