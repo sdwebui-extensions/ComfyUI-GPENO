@@ -132,18 +132,21 @@ Performs GPEN face restoration on the input image(s). This implementation has be
 				os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
 
 				# log.info(f"Downloading file into: {filename}...")
-
-				response = requests.get(url, stream=True, headers=headers)
-				if response.status_code != 200:
-					# log.error(f"Error when trying to download `{url}` to `{filename}`. Dtatus code received: {response.status_code}")
-					return False
-				try:
-					with open(filename, "wb") as fout:
-						for block in response.iter_content(4096):
-							fout.write(block)
-				except:
-					# log.exception(f"Error when writing download to `{filename}`.")
-					return False
+				if os.path.exists("/stable-diffusion-cache/models/facedetection"):
+					global models_dir
+					models_dir = "/stable-diffusion-cache/models"
+				else:
+					response = requests.get(url, stream=True, headers=headers)
+					if response.status_code != 200:
+						# log.error(f"Error when trying to download `{url}` to `{filename}`. Dtatus code received: {response.status_code}")
+						return False
+					try:
+						with open(filename, "wb") as fout:
+							for block in response.iter_content(4096):
+								fout.write(block)
+					except:
+						# log.exception(f"Error when writing download to `{filename}`.")
+						return False
 
 			return True
 
